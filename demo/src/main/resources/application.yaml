@@ -1,0 +1,115 @@
+# initial test for Security Demo System
+
+# ============================================================
+# CONFIGURACIÓN DEL SERVIDOR
+# ============================================================
+server:
+  port: 8866                           # Puerto donde corre la app
+  error:
+    include-message: always           # Muestra mensajes de error en respuestas
+    include-binding-errors: always
+
+# ============================================================
+# CONFIGURACIÓN DE SPRING (Núcleo)
+# ============================================================
+spring:
+  # ----- BASE DE DATOS (PostgreSQL) -----
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/VPMdb}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  # ----- JPA / HIBERNATE (Mapeo objeto-relacional) -----
+  jpa:
+    hibernate:
+      ddl-auto: update           # Crea/actualiza tablas automáticamente
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 20
+        show_sql: false          # Cambia a true para ver SQL en consola
+    show-sql: false
+    open-in-view: false
+  
+  # ----- EMAIL (Gmail) -----
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${GMAIL}
+    password: ${APLICATION_KEY_GMAIL}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+# ============================================================
+# CONFIGURACIÓN PROPIA DE LA APLICACIÓN
+# ============================================================
+app:
+  # ----- JWT (JSON Web Tokens) -----
+  jwt:
+    secret: "xk9#mN2$pQ7&vL5@wR3!tY8$mK4#nP7@qR9!sW2"  # MÍNIMO 32 caracteres
+    expiration: 86400000        # 24 horas en milisegundos
+    refresh-expiration: 604800000  # 7 días
+  
+  # ----- TELEGRAM BOT -----
+  telegram:
+    bot-token: ${TELEGRAM_BOT_TOKEN:"8294255093:AAGc78WM-TIIL2Kmh4sjfmKu2QGnd0z1VCg"}
+    admin-chat-id: ${TELEGRAM_CHAT_ID}
+  
+  # ----- SEGURIDAD -----
+  security:
+    rate-limit:
+      login: 5                  # Intentos máximos por minuto
+      register: 3
+      password-recovery: 3
+    session-timeout: 1800000    # 30 minutos en milisegundos
+    max-sessions-per-user: 3    # Sesiones simultáneas permitidas
+    allowed-ips:
+      - "127.0.0.1"             # Localhost
+      - "192.168.1.0/24"        # Red local
+      - "10.0.0.0/8"            # Red privada
+    
+  # ----- BACKUP -----
+  backup:
+    directory: "./backups"      # Carpeta donde se guardan los backups
+    retention-days: 30          # Días que se conservan
+    compression: true           # Comprimir en .gz
+    max-size-mb: 1024          # Tamaño máximo por backup (1GB)
+  
+  # ----- LOGGING -----
+  logging:
+    security-events: true       # Registrar eventos de seguridad
+    login-attempts: true        # Registrar intentos de login
+    backup-events: true         # Registrar operaciones de backup
+
+# ============================================================
+# LOGGING DE SPRING (Opcional)
+# ============================================================
+logging:
+  level:
+    com.example.demo: DEBUG
+    org.springframework.security: INFO
+    org.hibernate: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/seguridad-app.log
+    max-size: 10MB
+    max-history: 30
