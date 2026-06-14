@@ -63,7 +63,7 @@ spring:
 app:
   # ----- JWT (JSON Web Tokens) -----
   jwt:
-    secret: "xk9#mN2$pQ7&vL5@wR3!tY8$mK4#nP7@qR9!sW2"  # MÍNIMO 32 caracteres
+    secret: "xk9#mN2$pQ7&vL5@wR3!tY8$mK4#nP7@qR9!sW2$mK4#nP7@qR9!sW2$mK4#nP7@qR9!sW2"  # MÍNIMO 64 caracteres
     expiration: 86400000        # 24 horas en milisegundos
     refresh-expiration: 604800000  # 7 días
   

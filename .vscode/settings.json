@@ -1,3 +1,85 @@
 {
-    "java.compile.nullAnalysis.mode": "automatic"
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.configuration.updateBuildConfiguration": "automatic",
+    
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "C:\\Program Files\\Java\\jdk-21.0.11",
+            "default": true
+        }
+    ],
+    
+    "java.jdt.ls.java.home": "C:\\Program Files\\Java\\jdk-21.0.11",
+    "javaSwitcher.java.home": "C:\\Program Files\\Java\\jdk-21.0.11",  
+    "java.import.gradle.java.home": "C:\\Program Files\\Java\\jdk-21.0.11", 
+    
+    "maven.terminal.customEnv": [
+        {
+            "environmentVariable": "JAVA_HOME",
+            "value": "C:\\Program Files\\Java\\jdk-21.0.11"
+        }
+    ],
+    
+    "terminal.integrated.profiles.windows": {
+        "PowerShell": {
+            "source": "PowerShell",
+            "icon": "terminal-powershell"
+        },
+        "Command Prompt": {
+            "path": [
+                "${env:windir}\\Sysnative\\cmd.exe",
+                "${env:windir}\\System32\\cmd.exe"
+            ],
+            "args": [],
+            "icon": "terminal-cmd"
+        },
+        "Git Bash": {
+            "source": "Git Bash",
+            "icon": "terminal-git-bash"
+        },
+        "Java Switcher JDK25": {
+            "path": "cmd.exe",
+            "args": [
+                "/K",
+                "chcp 65001 > nul"
+            ],
+            "env": {
+                "JAVA_HOME": "C:\\Program Files\\Java\\jdk-25.0.3",
+                "PATH": "C:\\Program Files\\Java\\jdk-25.0.3\\bin;${env:PATH}"
+            },
+            "overrideName": true,
+            "icon": "terminal-cmd"
+        },
+        "Java Switcher JDK21": {
+            "path": "cmd.exe",
+            "args": [
+                "/K",
+                "chcp 65001 > nul"
+            ],
+            "env": {
+                "JAVA_HOME": "C:\\Program Files\\Java\\jdk-21.0.11",
+                "PATH": "C:\\Program Files\\Java\\jdk-21.0.11\\bin;${env:PATH}"
+            },
+            "overrideName": true,
+            "icon": "terminal-cmd"
+        },
+        "Java Switcher": {
+            "path": "cmd.exe",
+            "args": [
+                "/K",
+                "chcp 65001 > nul"
+            ],
+            "env": {
+                "JAVA_HOME": "C:\\Program Files\\Java\\jdk-21.0.11",
+                "PATH": "C:\\Program Files\\Java\\jdk-21.0.11\\bin;${env:PATH}"
+            },
+            "overrideName": true,
+            "icon": "terminal-cmd"
+        }
+    },
+    
+    "terminal.integrated.defaultProfile.windows": "Java Switcher",
+    "terminal.integrated.enablePersistentSessions": false,
+    "terminal.integrated.tabs.hideCondition": "never"
 }
