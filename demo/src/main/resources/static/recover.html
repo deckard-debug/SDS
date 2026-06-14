@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Contraseña - Sistema de Seguridad</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Recuperar Contraseña</h1>
+        <p class="subtitle">Te ayudaremos a restablecer tu acceso</p>
+        
+        <div id="step1">
+            <form id="step1Form">
+                <div class="form-group">
+                    <label>Usuario o Email</label>
+                    <input type="text" id="userIdentifier" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Método de verificación</label>
+                    <select id="recoveryMethod">
+                        <option value="TELEGRAM">Telegram</option>
+                        <option value="EMAIL">Email</option>
+                        <option value="QUESTIONS">Preguntas de seguridad</option>
+                    </select>
+                </div>
+                
+                <button type="submit">Continuar</button>
+            </form>
+        </div>
+        
+        <div id="step2" class="hidden">
+            <form id="step2Form">
+                <div id="questionsSection" class="security-questions hidden">
+                    <h3>Verifica tu identidad</h3>
+                    <div id="questionsContainer"></div>
+                </div>
+                
+                <div id="codeSection" class="hidden">
+                    <div class="form-group">
+                        <label>Código de verificación</label>
+                        <input type="text" id="verificationCode" placeholder="Ingresa el código que recibiste">
+                        <small>Revisa tu Telegram o Email</small>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Nueva contraseña</label>
+                    <input type="password" id="newPassword" minlength="8">
+                </div>
+                
+                <div class="form-group">
+                    <label>Confirmar nueva contraseña</label>
+                    <input type="password" id="confirmNewPassword">
+                </div>
+                
+                <button type="submit">Restablecer Contraseña</button>
+            </form>
+        </div>
+        
+        <div class="links">
+            <a href="/login.html">Volver al login</a>
+        </div>
+        
+        <div id="message" class="message"></div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8866';
+        let recoveryData = {};
+        
+        document.getElementById('step1Form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const identifier = document.getElementById('userIdentifier').value;
+            const method = document.getElementById('recoveryMethod').value;
+            
+            if (!identifier) {
+                showMessage('Ingresa tu usuario o email', 'error');
+                return;
+            }
+            
+            recoveryData = { identifier, method };
+            
+            showMessage('Verificando...', 'info');
+            
+            try {
+                if (method === 'QUESTIONS') {
+                    const response = await fetch(`${API_URL}/api/auth/get-security-questions`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ identifier })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success && result.questions) {
+                        displayQuestions(result.questions);
+                        document.getElementById('step1').classList.add('hidden');
+                        document.getElementById('step2').classList.remove('hidden');
+                        document.getElementById('questionsSection').classList.remove('hidden');
+                        document.getElementById('codeSection').classList.add('hidden');
+                        showMessage('Responde las preguntas de seguridad', 'info');
+                    } else {
+                        showMessage(result.message || 'Error al obtener preguntas', 'error');
+                    }
+                } else {
+                    const response = await fetch(`${API_URL}/api/auth/send-recovery-code`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ identifier, method })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        recoveryData.codeSent = true;
+                        document.getElementById('step1').classList.add('hidden');
+                        document.getElementById('step2').classList.remove('hidden');
+                        document.getElementById('questionsSection').classList.add('hidden');
+                        document.getElementById('codeSection').classList.remove('hidden');
+                        showMessage(`Se ha enviado un código a tu ${method === 'TELEGRAM' ? 'Telegram' : 'Email'}`, 'success');
+                    } else {
+                        showMessage(result.message || 'Error al enviar código', 'error');
+                    }
+                }
+            } catch (error) {
+                showMessage('Error de conexión: ' + error.message, 'error');
+            }
+        });
+        
+        function displayQuestions(questions) {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+            
+            questions.forEach((q, index) => {
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                div.innerHTML = `
+                    <label>${q.question}</label>
+                    <input type="text" id="answer_${index}" placeholder="Tu respuesta" required>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        document.getElementById('step2Form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+            
+            if (newPassword !== confirmNewPassword) {
+                showMessage('Las contraseñas no coinciden', 'error');
+                return;
+            }
+            
+            const payload = {
+                identifier: recoveryData.identifier,
+                newPassword: newPassword
+            };
+            
+            if (recoveryData.method === 'QUESTIONS') {
+                const answers = [];
+                const container = document.getElementById('questionsContainer');
+                const inputs = container.querySelectorAll('input');
+                inputs.forEach(input => {
+                    answers.push(input.value);
+                });
+                payload.answers = answers;
+            } else {
+                const code = document.getElementById('verificationCode').value;
+                if (!code) {
+                    showMessage('Ingresa el código de verificación', 'error');
+                    return;
+                }
+                payload.code = code;
+                payload.method = recoveryData.method;
+            }
+            
+            showMessage('Restableciendo contraseña...', 'info');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('Contraseña restablecida. Redirigiendo al login...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 2000);
+                } else {
+                    showMessage(result.message || 'Error al restablecer contraseña', 'error');
+                }
+            } catch (error) {
+                showMessage('Error de conexión: ' + error.message, 'error');
+            }
+        });
+        
+        function showMessage(msg, type) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.textContent = msg;
+            msgDiv.className = `message ${type}`;
+            setTimeout(() => {
+                msgDiv.className = 'message';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

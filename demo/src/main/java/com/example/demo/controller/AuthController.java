@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -76,5 +78,29 @@ public class AuthController {
             return xForwardedFor.split(",")[0].trim();
         }
         return request.getRemoteAddr();
+    }
+
+    // Recuperación de contraseña - Obtener preguntas de seguridad
+    @PostMapping("/get-security-questions")
+    public ResponseEntity<?> getSecurityQuestions(@RequestBody Map<String, String> request) {
+        String identifier = request.get("identifier");
+        Map<String, Object> response = authService.getSecurityQuestions(identifier);
+        return ResponseEntity.ok(response);
+    }
+
+    // Recuperación de contraseña - Enviar código
+    @PostMapping("/send-recovery-code")
+    public ResponseEntity<?> sendRecoveryCode(@RequestBody Map<String, String> request) {
+        String identifier = request.get("identifier");
+        String method = request.get("method");
+        Map<String, Object> response = authService.sendRecoveryCode(identifier, method);
+        return ResponseEntity.ok(response);
+    }
+
+    // Recuperación de contraseña - Restablecer
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, Object> request) {
+        Map<String, Object> response = authService.resetPassword(request);
+        return ResponseEntity.ok(response);
     }
 }

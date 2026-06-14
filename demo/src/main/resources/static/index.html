@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Seguridad</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container" style="text-align: center;">
+        <h1>Sistema de Seguridad Avanzado</h1>
+        <p class="subtitle">Autenticación segura con JWT, 2FA y recuperación de contraseña</p>
+        
+        <div style="display: flex; gap: 20px; justify-content: center; margin-top: 30px;">
+            <a href="/login.html" style="text-decoration: none;">
+                <button style="width: auto; padding: 12px 30px;">Iniciar Sesión</button>
+            </a>
+            <a href="/register.html" style="text-decoration: none;">
+                <button style="width: auto; padding: 12px 30px; background: #48bb78;">Registrarse</button>
+            </a>
+        </div>
+        
+        <div class="stats-grid" style="margin-top: 40px; grid-template-columns: repeat(3, 1fr);">
+            <div class="stat-card">
+                <div class="number">JWT</div>
+                <div class="label">Tokens Seguros</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">2FA</div>
+                <div class="label">Doble Autenticación</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">RC</div>
+                <div class="label">Rate Limiting</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

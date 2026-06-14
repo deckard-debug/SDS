@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema de Seguridad</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Iniciar Sesión</h1>
+        <p class="subtitle">Accede a tu cuenta</p>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Usuario</label>
+                <input type="text" id="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="password" required>
+            </div>
+            
+            <div id="twoFactorGroup" class="form-group hidden">
+                <label>Código 2FA</label>
+                <input type="text" id="twoFactorCode" placeholder="Ingresa el código que recibiste">
+                <small>Revisa tu Telegram o Email</small>
+            </div>
+            
+            <button type="submit">Ingresar</button>
+        </form>
+        
+        <div class="links">
+            <a href="/recover.html">¿Olvidaste tu contraseña?</a>
+            <br>
+            <a href="/register.html">Crear nueva cuenta</a>
+        </div>
+        
+        <div id="message" class="message"></div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8866';
+        let pendingUsername = null;
+        let pendingPassword = null;
+        
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const twoFactorCode = document.getElementById('twoFactorCode').value;
+            
+            const data = {
+                username: username,
+                password: password,
+                singleSession: true
+            };
+            
+            if (twoFactorCode) {
+                data.twoFactorCode = twoFactorCode;
+            }
+            
+            showMessage('Verificando...', 'info');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    localStorage.setItem('token', result.token);
+                    localStorage.setItem('username', result.username);
+                    localStorage.setItem('userId', result.userId);
+                    showMessage('Login exitoso! Redirigiendo...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard.html';
+                    }, 1000);
+                } else if (result.requiresTwoFactor) {
+                    pendingUsername = username;
+                    pendingPassword = password;
+                    document.getElementById('twoFactorGroup').classList.remove('hidden');
+                    showMessage(result.message || 'Se ha enviado un código de verificación', 'info');
+                } else {
+                    showMessage(result.message || 'Credenciales inválidas', 'error');
+                }
+            } catch (error) {
+                showMessage('Error de conexión: ' + error.message, 'error');
+            }
+        });
+        
+        function showMessage(msg, type) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.textContent = msg;
+            msgDiv.className = `message ${type}`;
+            setTimeout(() => {
+                if (!document.getElementById('twoFactorGroup').classList.contains('hidden')) {
+                    return;
+                }
+                msgDiv.className = 'message';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

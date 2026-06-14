@@ -38,30 +38,44 @@ public class SecurityConfig {
     
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        log.info("🔐 Configurando SecurityFilterChain...");
+        log.info("Configurando SecurityFilterChain...");
         
         http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-                log.info("📌 Sesiones configuradas como STATELESS");
+                log.info("Sesiones configuradas como STATELESS");
             })
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/public/**", "/error").permitAll()
+                .requestMatchers(
+                    "/",
+                    "/index.html",
+                    "/login.html",
+                    "/register.html",
+                    "/recover.html",
+                    "/dashboard.html",
+                    "/css/**",
+                    "/js/**",
+                    "/static/**",
+                    "/api/auth/**",
+                    "/api/public/**",
+                    "/error"
+
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(ipFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
         
-        log.info("✅ SecurityFilterChain configurado correctamente");
+        log.info("SecurityFilterChain configurado correctamente");
         return http.build();
     }
     
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> {
-            log.info("🔍 Buscando usuario: {}", username);
+            log.info("Buscando usuario: {}", username);
             return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
         };

@@ -17,7 +17,7 @@ public class EmailService {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(to);
-            message.setSubject("🔐 Código de Verificación - Sistema de Seguridad");
+            message.setSubject("Código de Verificación - Sistema de Seguridad");
             message.setText(String.format(
                 "Hola %s,\n\n" +
                 "Tu código de verificación es: %s\n\n" +
@@ -27,10 +27,10 @@ public class EmailService {
                 username, code
             ));
             mailSender.send(message);
-            log.info("✅ 2FA code sent to {}", to);
+            log.info("2FA code sent to {}", to);
             return true;
         } catch (Exception e) {
-            log.error("❌ Error sending email: {}", e.getMessage());
+            log.error("Error sending email: {}", e.getMessage());
             return false;
         }
     }
@@ -47,10 +47,10 @@ public class EmailService {
                 username
             ));
             mailSender.send(message);
-            log.info("✅ Welcome email sent to {}", to);
+            log.info("Welcome email sent to {}", to);
             return true;
         } catch (Exception e) {
-            log.error("❌ Error sending welcome email: {}", e.getMessage());
+            log.error("Error sending welcome email: {}", e.getMessage());
             return false;
         }
     }

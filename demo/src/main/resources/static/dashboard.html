@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Seguridad</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">Sistema Seguro</div>
+        <div class="navbar-menu">
+            <span id="userDisplay"></span>
+            <a href="#" id="logoutBtn">Cerrar Sesión</a>
+        </div>
+    </nav>
+    
+    <div class="dashboard-container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="number" id="userId">-</div>
+                <div class="label">ID de Usuario</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="twoFactorStatus">-</div>
+                <div class="label">2FA Activado</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="lastLogin">-</div>
+                <div class="label">Último Login</div>
+            </div>
+        </div>
+        
+        <div class="container" style="max-width: 100%;">
+            <h2>Información de tu Cuenta</h2>
+            <div style="background: #f7fafc; padding: 20px; border-radius: 10px;">
+                <p><strong>Usuario:</strong> <span id="profileUsername"></span></p>
+                <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+                <p><strong>2FA Habilitado:</strong> <span id="profile2FA"></span></p>
+                <p><strong>Último acceso:</strong> <span id="profileLastLogin"></span></p>
+            </div>
+            
+            <div style="margin-top: 30px;">
+                <button id="refreshBtn" class="btn-secondary">Refrescar Datos</button>
+                <button id="changePasswordBtn" class="btn-danger">Cambiar Contraseña</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8866';
+        
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+        
+        function checkAuth() {
+            const token = getToken();
+            if (!token) {
+                window.location.href = '/login.html';
+                return false;
+            }
+            return true;
+        }
+        
+        async function loadDashboard() {
+            if (!checkAuth()) return;
+            
+            const username = localStorage.getItem('username');
+            document.getElementById('userDisplay').textContent = `👤 ${username}`;
+            document.getElementById('profileUsername').textContent = username;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/user/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                });
+                
+                if (response.status === 401) {
+                    localStorage.clear();
+                    window.location.href = '/login.html';
+                    return;
+                }
+                
+                const user = await response.json();
+                
+                document.getElementById('userId').textContent = user.id;
+                document.getElementById('profileEmail').textContent = user.email;
+                document.getElementById('profile2FA').textContent = user.twoFactorEnabled ? ' Sí' : ' No';
+                document.getElementById('twoFactorStatus').textContent = user.twoFactorEnabled ? ' Activado' : ' Desactivado';
+                document.getElementById('profileLastLogin').textContent = user.lastLoginAt || 'Nunca';
+                document.getElementById('lastLogin').textContent = user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'Nunca';
+                
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            try {
+                await fetch(`${API_URL}/api/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                });
+            } catch (error) {
+                console.error('Error en logout:', error);
+            }
+            
+            localStorage.clear();
+            window.location.href = '/login.html';
+        });
+        
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            loadDashboard();
+        });
+        
+        document.getElementById('changePasswordBtn').addEventListener('click', () => {
+            const newPassword = prompt('Ingresa tu nueva contraseña (mínimo 8 caracteres):');
+            if (newPassword && newPassword.length >= 8) {
+                alert('Funcionalidad en desarrollo - Contacta al administrador');
+            } else if (newPassword) {
+                alert('La contraseña debe tener al menos 8 caracteres');
+            }
+        });
+        
+        loadDashboard();
+        
+        setInterval(() => {
+            const token = getToken();
+            if (!token) {
+                window.location.href = '/login.html';
+            }
+        }, 60000);
+    </script>
+</body>
+</html>

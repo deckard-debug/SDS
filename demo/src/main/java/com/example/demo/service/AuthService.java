@@ -19,9 +19,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -98,7 +101,7 @@ public class AuthService {
         // Notificar por Telegram
         if (user.getTelegramChatId() != null && !user.getTelegramChatId().isEmpty()) {
             telegramService.sendMessage(user.getTelegramChatId(),
-                    "✅ Bienvenido " + user.getUsername() + "\n\nTu cuenta ha sido creada exitosamente.",
+                    "Bienvenido " + user.getUsername() + "\n\nTu cuenta ha sido creada exitosamente.",
                     "Markdown");
         }
 
@@ -169,7 +172,7 @@ public class AuthService {
 
                 if (user.getTwoFactorMethod() == User.TwoFactorMethod.TELEGRAM) {
                     telegramService.sendMessage(user.getTelegramChatId(),
-                            "🔐 Tu código de verificación es: " + code, "Markdown");
+                            "Tu código de verificación es: " + code, "Markdown");
                 } else if (user.getTwoFactorMethod() == User.TwoFactorMethod.EMAIL) {
                     emailService.sendTwoFactorCode(user.getEmail(), code, user.getUsername());
                 }
@@ -216,7 +219,7 @@ public class AuthService {
         // Notificar nuevo login por Telegram
         if (user.getTelegramChatId() != null && !user.getTelegramChatId().isEmpty()) {
             telegramService.sendMessage(user.getTelegramChatId(),
-                    "🟢 Nuevo inicio de sesión\nIP: " + ip + "\nDispositivo: " + userAgent,
+                    "Nuevo inicio de sesión\nIP: " + ip + "\nDispositivo: " + userAgent,
                     "Markdown");
         }
 
@@ -262,4 +265,114 @@ public class AuthService {
                 .build();
         securityLogRepository.save(log);
     }
+
+
+    // Obtener preguntas de seguridad de un usuario
+    public Map<String, Object> getSecurityQuestions(String identifier) {
+        Map<String, Object> response = new HashMap<>();
+        
+        User user = userRepository.findByUsername(identifier)
+            .orElseGet(() -> userRepository.findByEmail(identifier).orElse(null));
+        
+        if (user == null) {
+            response.put("success", false);
+            response.put("message", "Usuario no encontrado");
+            return response;
+        }
+        
+        // Obtener preguntas de seguridad (necesitas crear la entidad SecurityQuestion)
+        // Por ahora, simulamos preguntas predefinidas
+        List<Map<String, String>> questions = new ArrayList<>();
+        Map<String, String> q1 = new HashMap<>();
+        q1.put("question", "¿Cuál es el nombre de tu primera mascota?");
+        questions.add(q1);
+        
+        Map<String, String> q2 = new HashMap<>();
+        q2.put("question", "¿En qué ciudad naciste?");
+        questions.add(q2);
+        
+        response.put("success", true);
+        response.put("questions", questions);
+        return response;
+    }
+
+    // Enviar código de recuperación
+    public Map<String, Object> sendRecoveryCode(String identifier, String method) {
+        Map<String, Object> response = new HashMap<>();
+        
+        User user = userRepository.findByUsername(identifier)
+            .orElseGet(() -> userRepository.findByEmail(identifier).orElse(null));
+        
+        if (user == null) {
+            response.put("success", false);
+            response.put("message", "Usuario no encontrado");
+            return response;
+        }
+        
+        String code = generateTwoFactorCode();
+        recoveryCodes.put(user.getUsername() + "_recovery", code);
+        
+        if ("TELEGRAM".equals(method) && user.getTelegramChatId() != null) {
+            telegramService.sendMessage(user.getTelegramChatId(), 
+                "Tu código de recuperación es: " + code, "Markdown");
+        } else if ("EMAIL".equals(method)) {
+            emailService.sendTwoFactorCode(user.getEmail(), code, user.getUsername());
+        } else {
+            response.put("success", false);
+            response.put("message", "Método de recuperación no disponible");
+            return response;
+        }
+        
+        response.put("success", true);
+        response.put("message", "Código enviado");
+        return response;
+    }
+
+    // Restablecer contraseña
+    public Map<String, Object> resetPassword(Map<String, Object> request) {
+        Map<String, Object> response = new HashMap<>();
+        String identifier = (String) request.get("identifier");
+        String newPassword = (String) request.get("newPassword");
+        
+        User user = userRepository.findByUsername(identifier)
+            .orElseGet(() -> userRepository.findByEmail(identifier).orElse(null));
+        
+        if (user == null) {
+            response.put("success", false);
+            response.put("message", "Usuario no encontrado");
+            return response;
+        }
+        
+        // Verificar código o preguntas según el método
+        if (request.containsKey("code")) {
+            String code = (String) request.get("code");
+            String storedCode = recoveryCodes.get(user.getUsername() + "_recovery");
+            if (storedCode == null || !storedCode.equals(code)) {
+                response.put("success", false);
+                response.put("message", "Código inválido o expirado");
+                return response;
+            }
+            recoveryCodes.remove(user.getUsername() + "_recovery");
+        } else if (request.containsKey("answers")) {
+            // Validar respuestas a preguntas de seguridad
+            // Implementar según tus necesidades
+        }
+        
+        // Actualizar contraseña
+        String newSalt = generateSalt();
+        String newPasswordHash = passwordEncoder.encode(newPassword + newSalt);
+        user.setPasswordHash(newPasswordHash);
+        user.setSalt(newSalt);
+        userRepository.save(user);
+        
+        // Invalidar todas las sesiones activas
+        sessionRepository.invalidateOtherSessions(user.getId(), null);
+        
+        response.put("success", true);
+        response.put("message", "Contraseña restablecida exitosamente");
+        return response;
+    }
+
+    // Mapa temporal para códigos de recuperación
+    private final Map<String, String> recoveryCodes = new ConcurrentHashMap<>();
 }

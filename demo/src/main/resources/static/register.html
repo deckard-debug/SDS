@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Sistema de Seguridad</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Crear Cuenta</h1>
+        <p class="subtitle">Completa tus datos para registrarte</p>
+        
+        <form id="registerForm">
+            <div class="form-group">
+                <label>Usuario *</label>
+                <input type="text" id="username" required minlength="3" maxlength="50">
+            </div>
+            
+            <div class="form-group">
+                <label>Email *</label>
+                <input type="email" id="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Contraseña *</label>
+                <input type="password" id="password" required minlength="8">
+                <small>Mínimo 8 caracteres, una mayúscula, un número y un carácter especial</small>
+            </div>
+            
+            <div class="form-group">
+                <label>Confirmar Contraseña *</label>
+                <input type="password" id="confirmPassword" required>
+            </div>
+            
+            <div class="form-group">
+                <label>ID de Telegram (opcional, para 2FA y recuperación)</label>
+                <input type="text" id="telegramChatId" placeholder="Ej: 1173244088">
+                <small>Obtén tu ID enviando /start a @userinfobot en Telegram</small>
+            </div>
+            
+            <div class="form-group">
+                <label>Autenticación 2FA</label>
+                <div class="two-factor-option">
+                    <label>
+                        <input type="radio" name="twoFactorMethod" value="NONE" checked> Deshabilitado
+                    </label>
+                    <label>
+                        <input type="radio" name="twoFactorMethod" value="TELEGRAM"> Telegram
+                    </label>
+                    <label>
+                        <input type="radio" name="twoFactorMethod" value="EMAIL"> Email
+                    </label>
+                </div>
+            </div>
+            
+            <div class="security-questions">
+                <h3>Preguntas de Seguridad (para recuperar contraseña)</h3>
+                <div class="form-group">
+                    <label>Pregunta 1 *</label>
+                    <select id="question1">
+                        <option value="">Selecciona una pregunta</option>
+                        <option value="¿Cuál es el nombre de tu primera mascota?">¿Cuál es el nombre de tu primera mascota?</option>
+                        <option value="¿Cuál es el apellido de soltera de tu madre?">¿Cuál es el apellido de soltera de tu madre?</option>
+                        <option value="¿En qué ciudad naciste?">¿En qué ciudad naciste?</option>
+                        <option value="¿Cuál es tu película favorita?">¿Cuál es tu película favorita?</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Respuesta 1 *</label>
+                    <input type="text" id="answer1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Pregunta 2 *</label>
+                    <select id="question2">
+                        <option value="">Selecciona una pregunta</option>
+                        <option value="¿Cuál era tu materia favorita en el colegio?">¿Cuál era tu materia favorita en el colegio?</option>
+                        <option value="¿Cuál es el modelo de tu primer auto?">¿Cuál es el modelo de tu primer auto?</option>
+                        <option value="¿Cuál es el nombre de tu mejor amigo de la infancia?">¿Cuál es el nombre de tu mejor amigo de la infancia?</option>
+                        <option value="¿Cuál es tu comida favorita?">¿Cuál es tu comida favorita?</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Respuesta 2 *</label>
+                    <input type="text" id="answer2" required>
+                </div>
+            </div>
+            
+            <button type="submit">Registrarse</button>
+        </form>
+        
+        <div class="links">
+            <a href="/login.html">¿Ya tienes cuenta? Inicia sesión</a>
+        </div>
+        
+        <div id="message" class="message"></div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8866';
+        
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                showMessage('Las contraseñas no coinciden', 'error');
+                return;
+            }
+            
+            const twoFactorMethod = document.querySelector('input[name="twoFactorMethod"]:checked').value;
+            
+            const data = {
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                password: password,
+                telegramChatId: document.getElementById('telegramChatId').value || null,
+                twoFactorEnabled: twoFactorMethod !== 'NONE',
+                twoFactorMethod: twoFactorMethod,
+                securityQuestions: [
+                    {
+                        question: document.getElementById('question1').value,
+                        answer: document.getElementById('answer1').value
+                    },
+                    {
+                        question: document.getElementById('question2').value,
+                        answer: document.getElementById('answer2').value
+                    }
+                ]
+            };
+            
+            if (!data.username || !data.email || !data.password) {
+                showMessage('Todos los campos son obligatorios', 'error');
+                return;
+            }
+            
+            if (!data.securityQuestions[0].question || !data.securityQuestions[0].answer ||
+                !data.securityQuestions[1].question || !data.securityQuestions[1].answer) {
+                showMessage('Debes completar ambas preguntas de seguridad', 'error');
+                return;
+            }
+            
+            showMessage('Registrando...', 'info');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('Registro exitoso! Redirigiendo al login...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 2000);
+                } else {
+                    showMessage(result.message || 'Error en el registro', 'error');
+                }
+            } catch (error) {
+                showMessage('Error de conexión: ' + error.message, 'error');
+            }
+        });
+        
+        function showMessage(msg, type) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.textContent = msg;
+            msgDiv.className = `message ${type}`;
+            setTimeout(() => {
+                msgDiv.className = 'message';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

@@ -43,16 +43,16 @@ public class TelegramService {
             if (response.getStatusCode() == HttpStatus.OK) {
                 JsonNode jsonResponse = objectMapper.readTree(response.getBody());
                 if (jsonResponse.has("ok") && jsonResponse.get("ok").asBoolean()) {
-                    log.info("✅ Telegram message sent to {}", chatId);
+                    log.info("Telegram message sent to {}", chatId);
                     return true;
                 }
             }
             
-            log.error("❌ Telegram API error: {}", response.getBody());
+            log.error("Telegram API error: {}", response.getBody());
             return false;
             
         } catch (Exception e) {
-            log.error("❌ Error sending Telegram message: {}", e.getMessage());
+            log.error("Error sending Telegram message: {}", e.getMessage());
             return false;
         }
     }
@@ -62,7 +62,7 @@ public class TelegramService {
      */
     public boolean sendTwoFactorCode(String chatId, String code, String username) {
         String message = String.format(
-            "🔐 *CÓDIGO DE VERIFICACIÓN*\n\n" +
+            "*CÓDIGO DE VERIFICACIÓN*\n\n" +
             "Hola *%s*, tu código de autenticación es:\n\n" +
             "`%s`\n\n" +
             "Este código expira en **5 minutos**.\n\n" +
@@ -78,7 +78,7 @@ public class TelegramService {
      */
     public boolean notifyNewLogin(String chatId, String username, String ip, String userAgent) {
         String message = String.format(
-            "🟢 *NUEVO INICIO DE SESIÓN*\n\n" +
+            "*NUEVO INICIO DE SESIÓN*\n\n" +
             "**Usuario:** %s\n" +
             "**IP:** %s\n" +
             "**Dispositivo:** %s\n" +
@@ -95,7 +95,7 @@ public class TelegramService {
      */
     public void sendSecurityAlert(String alertType, String details) {
         String message = String.format(
-            "🚨 *ALERTA DE SEGURIDAD*\n\n" +
+            "*ALERTA DE SEGURIDAD*\n\n" +
             "**Tipo:** %s\n" +
             "**Detalles:** %s\n" +
             "**Hora:** %s",
